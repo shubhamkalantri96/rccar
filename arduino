@@ -1,0 +1,98 @@
+#include <RH_ASK.h>
+#include <SPI.h> 
+#include "ServoTimer2.h"
+
+RH_ASK driver(2000, 2, 11, 5);
+ServoTimer2  myServo;
+
+
+int transmitter_recieve; //The received value from Transmitter
+int enablePWM_A = 6;//PWM pin for LM298
+int i1 = 9;//Forward Movement
+int i2 = 8;//BackWard Movement
+int val=0; 
+int servoPin = 4; //Output pin of Servo Motor
+
+void setup() {
+  myServo.attach(servoPin); 
+  driver.init();
+  pinMode(enablePWM_A, OUTPUT);
+  pinMode(i1, OUTPUT);
+  pinMode(i2, OUTPUT);
+  
+}
+
+
+  //For Backward Movement
+  void slowBackwardMov(){
+  digitalWrite(i1, LOW);
+  digitalWrite(i2, HIGH); 
+  analogWrite(enablePWM_A, 75);  
+  }
+  void midBackwardMov(){
+  digitalWrite(i1, LOW);
+  digitalWrite(i2, HIGH); 
+  analogWrite(enablePWM_A, 170);  
+  }
+  void fastBackwardMov(){
+  digitalWrite(i1, LOW);
+  digitalWrite(i2, HIGH); 
+  analogWrite(enablePWM_A, 255);  
+  }
+
+  //For Forward Movement
+  void slowForwardMov(){
+  digitalWrite(i1, HIGH);
+  digitalWrite(i2, LOW); 
+  analogWrite(enablePWM_A, 75);  
+  }
+  void midForwardMov(){
+  digitalWrite(i1, HIGH);
+  digitalWrite(i2, LOW); 
+  analogWrite(enablePWM_A, 170);  
+  }
+  void fastForwardMov(){
+  digitalWrite(i1, HIGH);
+  digitalWrite(i2, LOW); 
+  analogWrite(enablePWM_A, 255);  
+  }
+
+  //To stop the Motor
+  void stopMovement(){
+  digitalWrite(i1, LOW);
+  digitalWrite(i2, LOW);  
+  }
+
+void loop() {
+   uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
+   uint8_t buflen = sizeof(buf);
+
+  if (driver.recv(buf, &buflen)) 
+    {
+  transmitter_recieve=atoi((char*)buf);
+    }
+    if(transmitter_recieve==200){
+      slowBackwardMov();
+    }else if(transmitter_recieve==250){
+      midBackwardMov();
+    }else if(transmitter_recieve==300){
+      fastBackwardMov();
+    }else if(transmitter_recieve==700){
+      slowForwardMov();
+    }else if(transmitter_recieve==750){
+      midForwardMov();
+    }else if(transmitter_recieve==800){
+      fastForwardMov();
+    }else if(transmitter_recieve==500){
+      stopMovement();
+    }else if(transmitter_recieve>=4000 && transmitter_recieve<=5000){
+      val = map(transmitter_recieve, 5000, 4000, 1500, 2250);  //Considering 5000 as the middle point or 90 degree-For Steering left
+      myServo.write(val); 
+    }else if(transmitter_recieve>=5000 && transmitter_recieve<=6000){
+       val = map(transmitter_recieve, 5000, 6000, 1500, 750);  //Considering 5000 as the middle point or 90 degree-For Steering right
+       myServo.write(val);  
+    }else if(transmitter_recieve>=1000 && transmitter_recieve<=2000){ 
+     myServo.write(1500);  //90 as midpoint for straight movement
+    }
+    
+}
